@@ -29,11 +29,16 @@ int main(int argc, char *argv[])
 	chrono::duration<double> dur;
 	int progress;
 
-	int num_threads = stoi(argv[1]);
+	if (argc < 3) {
+        cerr << "Usage: " << argv[0] << " <num_threads> <graph_file>" << endl;
+        return 1; // Exit with error code
+    }
 
-	omp_set_num_threads(num_threads);
+    int num_threads = stoi(argv[1]);
+    omp_set_num_threads(num_threads);
 
-	string graphFile = "dblp_graph.txt";
+    // Assign the second argument as the graphFile name
+    string graphFile = argv[2];
 
 	// Read data
 	start = chrono::system_clock::now();

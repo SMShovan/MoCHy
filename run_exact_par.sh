@@ -1,13 +1,28 @@
-g++ -O3 -std=c++11 -lgomp -fopenmp main_exact_par.cpp -o exact_par;
-# Create or clear the file
-echo "Threads,Time (seconds)" > motif_counting_results.csv
+#!/bin/bash
 
-# Loop through the thread counts
-for i in 1 2 4 8 16 32 64; do
-    # Execute the program and capture the output
-    time=$(./exact_par $i | grep "Motif counting" | awk '{print $3}')
+# Compile the program
+g++ -O3 -std=c++11 -lgomp -fopenmp main_exact_par.cpp -o exact_par
+
+# Find all .txt files in the current directory
+for dataset in *.txt; do
+    # Extract the base name without the .txt extension for the CSV file name
+    dataset_name=$(basename "$dataset" .txt)
     
-    # Write the thread count and time to the CSV file
-    echo "$i,$time" >> motif_counting_results.csv
+    # Initialize the CSV file for this dataset
+    echo "Threads,Time (seconds)" > "${dataset_name}_results.csv"
+    
+    # Loop through the thread counts
+    for i in 1 2 4 8 16 32 64; do
+        # Execute the program and capture the output
+        time=$(./exact_par $i "$dataset" | grep "Motif counting" | awk '{print $3}')
+        
+        # Write the thread count and time to the dataset-specific CSV file
+        echo "$i,$time" >> "${dataset_name}_results.csv"
+    done
+    
+    # Plot the results for this dataset
+    python plot.py "${dataset_name}_results.csv"
 done
-rm exact_par;
+
+# Clean up by removing the executable
+rm exact_par
