@@ -48,22 +48,29 @@ int main(int argc, char *argv[])
 	vector< unordered_map<int, int> > hyperedge_inter;
 	hyperedge_adj.resize(E);
 	hyperedge_inter.resize(E);
+	// Initialize the update time with -1 (1 64 times in binary) of long long format for each of the hyperedges
 	vector<long long> upd_time(E, -1LL);
 		
 	for (int hyperedge_a = 0; hyperedge_a < E; hyperedge_a++){
 		long long l_hyperedge_a = (long long)hyperedge_a;
+		// Loop for each nodes in each hyperedge
 		for (const int &node: hyperedge2node[hyperedge_a]){
+			// Loop for each hyperedges associated with the node
 			for (const int &hyperedge_b: node2hyperedge[node]){
+				// Avoid same hyperedge
 				if (hyperedge_b == hyperedge_a) continue;
+				// First discovery of neighbor hyper edge
 				if ((upd_time[hyperedge_b] >> 31) ^ hyperedge_a){
 					upd_time[hyperedge_b] = (l_hyperedge_a << 31) + (long long)hyperedge_adj[hyperedge_b].size();
 					hyperedge_adj[hyperedge_b].push_back({hyperedge_a, 0});
 				}
+				// Second and so on discovery of neighbor hyper edge
 				hyperedge_adj[hyperedge_b][(int)(upd_time[hyperedge_b] & 0x7FFFFFFFLL)].second++;
 			}
 		}
 	}
 	
+	// Find inter-hyper edge weight
 	for (int hyperedge_a = 0; hyperedge_a < E; hyperedge_a++){
 		int deg_a = hyperedge_adj[hyperedge_a].size();
 		hyperedge_inter[hyperedge_a].rehash(deg_a);
