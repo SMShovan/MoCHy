@@ -40,7 +40,7 @@ long long* flatten2DVector(const std::vector<std::vector<long long>>& vec, size_
     // Calculate the actual size needed
     size_t requiredSize = 0;
     for (const auto& v : vec) {
-        requiredSize += v.size() + 4;  // Adding 4 for start, end, previous, and next addresses
+        requiredSize += v.size() + 5;  // Adding 5 for start, end, previous, next, and last addresses
     }
 
     // Ensure the total size is a multiple of 32 long long integers (256 bytes)
@@ -59,20 +59,35 @@ long long* flatten2DVector(const std::vector<std::vector<long long>>& vec, size_
     // Flatten the 2-D vector into the allocated memory with metadata
     long long* currentPtr = contiguousMemory;
     for (const auto& v : vec) {
-        uintptr_t startAddress = reinterpret_cast<uintptr_t>(&v.front());
-        uintptr_t endAddress = reinterpret_cast<uintptr_t>(&v.back());
+        uintptr_t startAddress = reinterpret_cast<uintptr_t>(currentPtr + 5); // Corrected
+        uintptr_t endAddress = startAddress + (v.size() - 1) * sizeof(long long);
+        uintptr_t previousAddress = INT_MAX; // Placeholder
+        uintptr_t nextAddress = INT_MAX;     // Placeholder
+
+        // Initially setting lastAddress
+        uintptr_t lastAddress = endAddress;
+
+        // Metadata
         *reinterpret_cast<uintptr_t*>(currentPtr++) = startAddress;  // Start address
         *reinterpret_cast<uintptr_t*>(currentPtr++) = endAddress;    // End address
-        *reinterpret_cast<uintptr_t*>(currentPtr++) = INT_MAX;       // Previous address (initially INT_MAX)
-        *reinterpret_cast<uintptr_t*>(currentPtr++) = INT_MAX;       // Next address (initially INT_MAX)
+        *reinterpret_cast<uintptr_t*>(currentPtr++) = previousAddress; // Previous address
+        *reinterpret_cast<uintptr_t*>(currentPtr++) = nextAddress;     // Next address
+        uintptr_t* lastAddressPtr = reinterpret_cast<uintptr_t*>(currentPtr++); // Placeholder for lastAddress
+
+        // Data
         addressArray.push_back(startAddress);
         for (const auto& elem : v) {
             *currentPtr++ = elem;
         }
+
         // Pad the remaining space to ensure the length is a multiple of 32 long long integers
         while ((currentPtr - contiguousMemory) % 32 != 0) {
             *currentPtr++ = 0;
         }
+
+        // Update lastAddress now that currentPtr is positioned correctly
+        lastAddress = reinterpret_cast<uintptr_t>(currentPtr - 1);
+        *lastAddressPtr = lastAddress;
     }
 
     return contiguousMemory;
